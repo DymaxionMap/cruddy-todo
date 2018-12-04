@@ -27,31 +27,17 @@ exports.create = (text, callback) => {
 
 exports.readAll = (callback) => {
 
-  // read data dir
   fs.readdirAsync(exports.dataDir)
     .then(files => {
-      // take files, and get array of ids, map files into promises using readfileAsync
-      const ids = files.map(file => path.basename(file, '.txt'));
-      // and put id array and promise array into promise.all
-      return Promise.all([ids, ...files.map(file => {
+      const data = files.map(file => {
         var filePath = path.join(exports.dataDir, file);
-        return fs.readFileAsync(filePath);
-      })]);
-    })
-    // then when promises resolve, we have array of contents
-    .then(results => {
-      toDoArray = [];
-      const ids = results[0];
-      const contents = results.slice(1).map(result => result.toString('utf8'));
-      // push contents as objects into data
-      for (var i = 0; i < ids.length; i++) {
-        toDoArray.push({id: ids[i], text: contents[i]});
-      }
-      callback(null, toDoArray);
-    });
-  
-  
+        return fs.readFileAsync(filePath).then(contents => {
+          return ({id: path.basename(file, '.txt'), text: contents.toString()});
+        });
+      });
 
+      Promise.all(data).then(todos => callback(null, todos));
+    });
 };
 
 exports.readOne = (id, callback) => {
