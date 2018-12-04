@@ -49,31 +49,34 @@ exports.readOne = (id, callback) => {
   //convert id to pathname
   var filePath = path.join(exports.dataDir, (id + '.txt'));
   //calling readfile with pathname
+  // retrieve text contents
   fs.readFile(filePath, (err, fileData) => {
     if (err) {
       callback(err, null);
     } else {
+    // call callback with {id, text}
       callback(null, {id, text: fileData.toString('utf8')});
     }
   });
-  // retrieve text contents
-  // call callback with {id, text}
-  // var text = items[id];
-  // if (!text) {
-  //   callback(new Error(`No item with id: ${id}`));
-  // } else {
-  //   callback(null, { id, text });
-  // }
+
 };
 
 exports.update = (id, text, callback) => {
-  var item = items[id];
-  if (!item) {
-    callback(new Error(`No item with id: ${id}`));
-  } else {
-    items[id] = text;
-    callback(null, { id, text });
-  }
+  var filePath = path.join(exports.dataDir, (id + '.txt'));
+  fs.access(filePath, fs.constants.F_OK, (err) => {
+    if (err) {
+      callback(err, null);
+    } else {
+      fs.writeFile(filePath, text, (err) => {
+        if (err) {
+          throw ('unable to write over' + id + '.txt');
+        } else {
+          callback(null, {id, text});
+        }
+      });
+    }
+  });
+
 };
 
 exports.delete = (id, callback) => {
