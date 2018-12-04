@@ -2,9 +2,10 @@ const fs = require('fs');
 const path = require('path');
 const _ = require('underscore');
 const counter = require('./counter');
+const Promise = require('bluebird');
 
 var items = {};
-
+Promise.promisifyAll(fs);
 // Public API - Fix these CRUD functions ///////////////////////////////////////
 
 exports.create = (text, callback) => {
@@ -25,23 +26,31 @@ exports.create = (text, callback) => {
 };
 
 exports.readAll = (callback) => {
-  var data = [];
-  // iterate over file directory
-  fs.readdir(exports.dataDir, (err, files) => {
-  // check for possible errors
-    if (err) {
-      throw ('error retrieving files');
-    } else {
-      files.forEach(file => {
-        var id = path.basename(file, '.txt');
-        // create object for each file
-        // push object to data
-        data.push({ id, text: id });
-      });
-      // execute callback with data
-      callback(null, data);
-    }
-  });
+
+  // read data dir
+  fs.readdirAsync(exports.dataDir)
+    .then(files => {
+      // take files, and get array of ids, map files into promises using readfileAsync
+      const ids = files.map(file => path.basename(file, '.txt'));
+      // and put id array and promise array into promise.all
+      return Promise.all([ids, ...files.map(file => {
+        var filePath = path.join(exports.dataDir, file);
+        return fs.readFileAsync(filePath);
+      })]);
+    })
+    // then when promises resolve, we have array of contents
+    .then(results => {
+      toDoArray = [];
+      const ids = results[0];
+      const contents = results.slice(1).map(result => result.toString('utf8'));
+      // push contents as objects into data
+      for (var i = 0; i < ids.length; i++) {
+        toDoArray.push({id: ids[i], text: contents[i]});
+      }
+      callback(null, toDoArray);
+    });
+  
+  
 
 };
 
