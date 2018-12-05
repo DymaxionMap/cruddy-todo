@@ -77,25 +77,6 @@ exports.getNextUniqueId = (callback) => {
   //   });
   // });
 
-  // return new Promise((resolve, reject) => {
-  //   readCounter((err, count) => {
-  //     if (err) {
-  //       reject(err);
-  //       return;
-  //     }
-
-  //     count += 1;
-  //     writeCounter(count, (err, counterString) => {
-  //       if (err) {
-  //         reject(err);
-  //         return;
-  //       }
-        
-  //       resolve(callback(null, counterString));
-  //     });
-  //   });
-  // });
-
   // PROMISE VERSION
   promissifiedReadCounter()
     .then(count => {
@@ -106,6 +87,17 @@ exports.getNextUniqueId = (callback) => {
     .then(counterString => callback(null, counterString));
 };
 
+exports.promiseGetNextId = () => {
+  return new Promise((resolve, reject) => {
+    promissifiedReadCounter()
+      .then(count => {
+        count += 1;
+        return count;
+      })
+      .then(incrementedCount => promissifiedWriteCounter(incrementedCount))
+      .then(counterString => resolve(counterString));
+  });
+};
 
 
 // Configuration -- DO NOT MODIFY //////////////////////////////////////////////

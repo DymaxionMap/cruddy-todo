@@ -25,6 +25,14 @@ exports.create = (text, callback) => {
   });
 };
 
+exports.promiseCreate = (text) => {
+  return counter.promiseGetNextId().then(id => { 
+    var filePath = path.join(exports.dataDir, (id + '.txt'));
+    fs.writeFileAsync(filePath, text);
+    return ({id, text});
+  });
+};
+
 exports.readAll = (callback) => {
 
   fs.readdirAsync(exports.dataDir)
@@ -56,6 +64,13 @@ exports.readOne = (id, callback) => {
 
 };
 
+exports.promiseReadOne = function(id) {
+  var filePath = path.join(exports.dataDir, (id + '.txt'));
+  return fs.readFileAsync(filePath).then(fileData => {
+    return {id, text: fileData.toString('utf8')};
+  });
+};
+
 exports.update = (id, text, callback) => {
   var filePath = path.join(exports.dataDir, (id + '.txt'));
   fs.access(filePath, fs.constants.F_OK, (err) => {
@@ -74,6 +89,12 @@ exports.update = (id, text, callback) => {
 
 };
 
+exports.promiseUpdate = (id, text) => {
+  var filePath = path.join(exports.dataDir, (id + '.txt'));
+  return fs.accessAsync(filePath, fs.constants.F_OK)
+    .then(() => fs.writeFileAsync(filePath, text).then(() => ({ id, text })));
+};
+
 exports.delete = (id, callback) => {
   // get filePath from id
   var filePath = path.join(exports.dataDir, (id + '.txt'));
@@ -87,6 +108,11 @@ exports.delete = (id, callback) => {
       callback();
     }
   });
+};
+
+exports.promiseDelete = (id) => {
+  var filePath = path.join(exports.dataDir, (id + '.txt'));
+  return fs.unlinkAsync(filePath);
 };
 
 // Config+Initialization code -- DO NOT MODIFY /////////////////////////////////
