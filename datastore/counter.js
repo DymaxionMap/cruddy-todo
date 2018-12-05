@@ -1,6 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 const sprintf = require('sprintf-js').sprintf;
+const Promise = require('bluebird');
 
 var counter = 0;
 
@@ -25,6 +26,17 @@ const readCounter = (callback) => {
   });
 };
 
+const promissifiedReadCounter = () => {
+  return (new Promise((resolve, reject) => {
+    fs.readFile(exports.counterFile, (err, fileData) => {
+      if (err) {
+        return reject(err);
+      }
+      resolve(Number(fileData));
+    });
+  }));
+};
+
 const writeCounter = (count, callback) => {
   var counterString = zeroPaddedNumber(count);
   fs.writeFile(exports.counterFile, counterString, (err) => {
@@ -36,19 +48,62 @@ const writeCounter = (count, callback) => {
   });
 };
 
+const promissifiedWriteCounter = (count) => {
+  return new Promise((resolve, reject) => {
+    var counterString = zeroPaddedNumber(count);
+    fs.writeFile(exports.counterFile, counterString, (err) => {
+      if (err) {
+        return reject(err);
+      }
+      resolve(counterString);
+    });
+  });
+};
+
+
 // Public API - Fix this function //////////////////////////////////////////////
 
 exports.getNextUniqueId = (callback) => {
-  // read the current counter file
-  readCounter((err, count) => {
-  // increment the counter
-    count = count + 1;
-    // write the new counter to file
-    writeCounter(count, (err, counterString) => {
-    // pass the new counter to the callback
-      callback(err, counterString);
-    });
-  });
+
+  // OLD CALLBACK VERSION
+  // // read the current counter file
+  // readCounter((err, count) => {
+  // // increment the counter
+  //   count = count + 1;
+  //   // write the new counter to file
+  //   writeCounter(count, (err, counterString) => {
+  //   // pass the new counter to the callback
+  //     callback(err, counterString);
+  //   });
+  // });
+
+  // return new Promise((resolve, reject) => {
+  //   readCounter((err, count) => {
+  //     if (err) {
+  //       reject(err);
+  //       return;
+  //     }
+
+  //     count += 1;
+  //     writeCounter(count, (err, counterString) => {
+  //       if (err) {
+  //         reject(err);
+  //         return;
+  //       }
+        
+  //       resolve(callback(null, counterString));
+  //     });
+  //   });
+  // });
+
+  // PROMISE VERSION
+  promissifiedReadCounter()
+    .then(count => {
+      count += 1;
+      return count;
+    })
+    .then(incrementedCount => promissifiedWriteCounter(incrementedCount))
+    .then(counterString => callback(null, counterString));
 };
 
 
